@@ -169,8 +169,8 @@ export function GameMap({ state, onSelectRoom, onShop, onDaily, onProfile, onLea
       </div>
 
       {/* Bottom nav */}
-      <div className="fixed bottom-0 left-0 right-0 flex items-center justify-around px-4 py-3 z-50"
-        style={{ background: 'rgba(13,10,30,0.95)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(255,215,0,0.15)' }}>
+      <div className="fixed bottom-0 z-50 flex items-center justify-around px-4 py-3"
+        style={{ left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: 'rgba(13,10,30,0.95)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(255,215,0,0.15)' }}>
         {[
           { icon: '🗺️', label: 'מפה', active: true, onClick: () => {} },
           { icon: '🏪', label: 'חנות', active: false, onClick: onShop },

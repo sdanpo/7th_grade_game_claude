@@ -351,6 +351,6 @@ export const rooms: Room[] = [
 
 export const dailyChallenges: { question: string; answer: string | number; hint: string; reward: number }[] = [
   { question: 'מה התוצאה של 17² - 16²?', answer: 33, hint: 'השתמש בנוסחת הפרש ריבועים: (a+b)(a-b)', reward: 100 },
-  { question: 'כמה אפסים יש בסוף התוצאה של 100!?', answer: 24, hint: 'ספור כמה פעמים 5 מופיע בפירוק עצרת', reward: 150 },
+  { question: 'כמה מספרים ריבועיים שלמים (1,4,9,16,...) יש בין 1 ל-200?', answer: 14, hint: '√200 ≈ 14.1 — כמה מספרים שלמים עד שם?', reward: 100 },
   { question: 'אם תכפיל 111,111,111 × 111,111,111, כמה ספרות יש בתוצאה?', answer: 18, hint: 'ספור את הספרות: 12345678987654321', reward: 120 },
 ];

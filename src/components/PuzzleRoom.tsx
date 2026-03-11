@@ -63,6 +63,8 @@ export function PuzzleRoom({ roomId, state, onBack, onSolve }: Props) {
   const [cameraCaptured, setCameraCaptured] = useState(false);
   const [bonusActive, setBonusActive] = useState(false);
   const [solvedInRoom, setSolvedInRoom] = useState<string[]>([]);
+  const [wrongAttempts, setWrongAttempts] = useState(0);
+  const [showSolution, setShowSolution] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef(Date.now());
 
@@ -76,6 +78,7 @@ export function PuzzleRoom({ roomId, state, onBack, onSolve }: Props) {
       setTimeLeft(prev => {
         if (prev <= 1) {
           clearInterval(timerRef.current!);
+          setShowSolution(true);
           return 0;
         }
         return prev - 1;
@@ -91,6 +94,8 @@ export function PuzzleRoom({ roomId, state, onBack, onSolve }: Props) {
     setSelectedOption(null);
     setVoiceAnswer('');
     setCameraCaptured(false);
+    setWrongAttempts(0);
+    setShowSolution(false);
     setAnimClass('animate-slide-up');
     startTimeRef.current = Date.now();
     if (currentPuzzle.timeLimit) startTimer(currentPuzzle.timeLimit);
@@ -141,6 +146,9 @@ export function PuzzleRoom({ roomId, state, onBack, onSolve }: Props) {
     } else {
       setFeedback('wrong');
       setAnimClass('animate-shake');
+      const newAttempts = wrongAttempts + 1;
+      setWrongAttempts(newAttempts);
+      if (newAttempts >= 3) setShowSolution(true);
       setTimeout(() => { setFeedback(null); setAnimClass(''); }, 800);
     }
   };
@@ -187,8 +195,9 @@ export function PuzzleRoom({ roomId, state, onBack, onSolve }: Props) {
 
       {/* Room header */}
       <div className="flex items-center gap-3 px-4 pt-4 mb-4">
-        <button onClick={onBack} className="w-9 h-9 rounded-xl flex items-center justify-center btn-purple">
-          <ArrowLeft size={18} />
+        <button onClick={onBack} className="flex items-center gap-1.5 px-3 py-2 rounded-xl btn-purple text-sm font-bold shrink-0">
+          <ArrowLeft size={15} />
+          <span>חזרה</span>
         </button>
         <div className="flex-1">
           <h2 className="font-black text-lg" style={{ fontFamily: 'Cinzel, serif', color: '#FFD700' }}>
@@ -282,6 +291,24 @@ export function PuzzleRoom({ roomId, state, onBack, onSolve }: Props) {
               >
                 💡 רמז: {currentPuzzle.hint}
                 {hintPenalty && <span className="text-red-400 text-xs ml-2">(-30% מטבעות)</span>}
+              </motion.div>
+            )}
+
+            {/* Solution reveal (after 3 wrong or timeout) */}
+            {showSolution && !isAlreadySolved && feedback !== 'correct' && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="mb-3 p-3 rounded-xl text-sm"
+                style={{ background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.4)', color: '#93c5fd' }}
+              >
+                <p className="font-bold mb-1">
+                  {timeLeft === 0 && currentPuzzle.timeLimit ? '⏰ הזמן נגמר!' : '💡 אחרי 3 נסיונות —'}
+                </p>
+                <p>
+                  התשובה הנכונה: <span className="font-black text-white">{currentPuzzle.answer}</span>
+                </p>
+                {currentPuzzle.hint && <p className="mt-1 text-blue-300">הסבר: {currentPuzzle.hint}</p>}
               </motion.div>
             )}
 

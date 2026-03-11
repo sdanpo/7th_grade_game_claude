@@ -117,6 +117,9 @@ function App() {
     <div className="relative" style={{ background: '#0d0a1e', minHeight: '100vh' }}>
       <StarField />
 
+      {/* Centered content column */}
+      <div className="relative mx-auto" style={{ maxWidth: '480px', minHeight: '100vh' }}>
+
       {/* Global coin display */}
       {showNav && (
         <CoinDisplay
@@ -209,6 +212,7 @@ function App() {
           </motion.div>
         )}
       </AnimatePresence>
+      </div>{/* end centered column */}
     </div>
   );
 }

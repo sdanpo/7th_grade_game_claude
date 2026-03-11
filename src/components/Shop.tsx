@@ -49,8 +49,9 @@ export function Shop({ state, onBack, onPurchase, onSetAvatar }: Props) {
       
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-4 mb-6">
-        <button onClick={onBack} className="w-9 h-9 rounded-xl flex items-center justify-center btn-purple">
-          <ArrowLeft size={18} />
+        <button onClick={onBack} className="flex items-center gap-1.5 px-3 py-2 rounded-xl btn-purple text-sm font-bold shrink-0">
+          <ArrowLeft size={15} />
+          <span>חזרה</span>
         </button>
         <div>
           <h2 className="text-gold-glow font-black text-xl" style={{ fontFamily: 'Cinzel, serif' }}>

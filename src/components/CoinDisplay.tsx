@@ -35,8 +35,8 @@ export function CoinDisplay({ coins, level, streak, avatar }: Props) {
   }, [coins]);
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-2"
-      style={{ background: 'rgba(13,10,30,0.9)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,215,0,0.2)' }}>
+    <div className="fixed top-0 z-50 flex items-center justify-between px-4 py-2"
+      style={{ left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '480px', background: 'rgba(13,10,30,0.9)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,215,0,0.2)' }}>
       
       {/* Avatar + Level */}
       <div className="flex items-center gap-2">
