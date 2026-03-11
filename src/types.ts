@@ -1,4 +1,4 @@
-export type Screen = 'home' | 'map' | 'room' | 'shop' | 'profile' | 'daily' | 'leaderboard';
+export type Screen = 'auth' | 'home' | 'map' | 'room' | 'shop' | 'profile' | 'daily' | 'leaderboard';
 export type PuzzleType = 'math' | 'logic' | 'sequence' | 'voice' | 'camera' | 'cipher' | 'visual';
 export type Difficulty = 'easy' | 'medium' | 'hard' | 'legendary';
 

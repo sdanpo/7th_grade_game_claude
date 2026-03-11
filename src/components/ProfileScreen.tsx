@@ -5,8 +5,10 @@ import { ArrowLeft, Star, Trophy, Flame, Target } from 'lucide-react';
 
 interface Props {
   state: GameState;
+  userEmail?: string | null;
   onBack: () => void;
   onReset: () => void;
+  onSignOut?: () => void;
 }
 
 function xpToNextLevel(xp: number): { current: number; needed: number; level: number } {
@@ -27,7 +29,7 @@ const achievements = [
   { id: 'solver-25', icon: '🏆', name: 'אלוף', desc: '25 חידות פתורות', condition: (s: GameState) => s.totalSolved >= 25 },
 ];
 
-export function ProfileScreen({ state, onBack, onReset }: Props) {
+export function ProfileScreen({ state, userEmail, onBack, onReset, onSignOut }: Props) {
   const { current, needed, level } = xpToNextLevel(state.xp);
   const totalPuzzles = rooms.reduce((a, r) => a + r.puzzles.length, 0);
   const completionRate = Math.round((state.solvedPuzzles.length / totalPuzzles) * 100);
@@ -134,6 +136,30 @@ export function ProfileScreen({ state, onBack, onReset }: Props) {
           })}
         </div>
       </div>
+
+      {/* Account info + sign out */}
+      {(userEmail || onSignOut) && (
+        <div className="px-4 mb-4">
+          <div className="glass-card p-4 rounded-xl flex items-center justify-between"
+            style={{ border: '1px solid rgba(124,58,237,0.3)' }}>
+            <div>
+              <p className="text-xs text-gray-400">מחובר כ-</p>
+              <p className="text-purple-300 text-sm font-semibold truncate">{userEmail ?? 'אורח'}</p>
+            </div>
+            {onSignOut && (
+              <button
+                onClick={() => {
+                  if (window.confirm('האם לצאת מהחשבון?')) onSignOut();
+                }}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+                style={{ background: 'rgba(124,58,237,0.2)', border: '1px solid rgba(124,58,237,0.4)', color: '#c4b5fd' }}
+              >
+                יציאה
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Reset button */}
       <div className="px-4">

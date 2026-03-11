@@ -1,8 +1,11 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Screen } from './types';
 import { useGameState } from './hooks/useGameState';
+import { useAuth } from './hooks/useAuth';
+import { isSupabaseEnabled } from './lib/supabase';
 import { StarField } from './components/StarField';
 import { CoinDisplay } from './components/CoinDisplay';
+import { AuthScreen } from './components/AuthScreen';
 import { HomePage } from './components/HomePage';
 import { GameMap } from './components/GameMap';
 import { PuzzleRoom } from './components/PuzzleRoom';
@@ -55,7 +58,26 @@ function LevelUpToast({ level, onDone }: { level: number; onDone: () => void }) 
   );
 }
 
+// Spinner shown while auth session is loading
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen flex items-center justify-center"
+      style={{ background: 'linear-gradient(180deg, #0d0a1e, #0a0518)' }}>
+      <StarField />
+      <div className="text-center">
+        <div className="text-5xl mb-4 animate-pulse">🧩</div>
+        <div className="w-8 h-8 rounded-full border-2 border-yellow-400 border-t-transparent animate-spin mx-auto" />
+      </div>
+    </div>
+  );
+}
+
 function App() {
+  const { user, loading: authLoading, signOut } = useAuth();
+
+  // userId is the Supabase auth user ID when logged in, null for guests/no-supabase
+  const userId = user?.id ?? null;
+
   const [screen, setScreen] = useState<Screen>('home');
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
   const [coinToast, setCoinToast] = useState<number | null>(null);
@@ -74,7 +96,7 @@ function App() {
     completeDaily,
     resetGame,
     hasDoubleCoins,
-  } = useGameState();
+  } = useGameState(userId);
 
   // Detect level up
   useEffect(() => {
@@ -83,6 +105,13 @@ function App() {
       prevLevel.current = state.level;
     }
   }, [state.level]);
+
+  // When Supabase user logs in, skip home screen if we already have a name
+  useEffect(() => {
+    if (user && state.playerName && screen === 'home') {
+      setScreen('map');
+    }
+  }, [user, state.playerName, screen]);
 
   const handleStart = useCallback((name: string) => {
     setPlayerName(name);
@@ -111,6 +140,40 @@ function App() {
     unlockRoom(roomId, cost);
   }, [unlockRoom]);
 
+  const handleSignOut = useCallback(async () => {
+    await signOut();
+    resetGame();
+    setScreen('home');
+  }, [signOut, resetGame]);
+
+  // Show spinner while auth is initializing
+  if (authLoading) return <LoadingScreen />;
+
+  // If Supabase is enabled and user is NOT logged in → show auth screen
+  if (isSupabaseEnabled && !user && screen !== 'home') {
+    // Guest mode via 'home' screen is allowed — only push to auth if trying to access game screens
+  }
+
+  const showAuthScreen = isSupabaseEnabled && !user && screen !== 'home';
+  if (showAuthScreen) {
+    return (
+      <AuthScreen
+        onAuth={() => setScreen('home')}
+        onGuest={() => {}} // already on 'home'... handled below
+      />
+    );
+  }
+
+  // When Supabase is on and no user, show auth before home
+  if (isSupabaseEnabled && !user) {
+    return (
+      <AuthScreen
+        onAuth={() => setScreen('home')}
+        onGuest={() => setScreen('home')}
+      />
+    );
+  }
+
   const showNav = screen !== 'home';
 
   return (
@@ -120,98 +183,102 @@ function App() {
       {/* Centered content column */}
       <div className="relative mx-auto" style={{ maxWidth: '480px', minHeight: '100vh' }}>
 
-      {/* Global coin display */}
-      {showNav && (
-        <CoinDisplay
-          coins={state.coins}
-          level={state.level}
-          streak={state.streak}
-          avatar={state.avatar}
-        />
-      )}
-
-      {/* Toast notifications */}
-      <AnimatePresence>
-        {coinToast !== null && (
-          <CoinToast key="coin" amount={coinToast} onDone={() => setCoinToast(null)} />
-        )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {levelUpToast !== null && (
-          <LevelUpToast key="level" level={levelUpToast} onDone={() => setLevelUpToast(null)} />
-        )}
-      </AnimatePresence>
-
-      {/* Screen routing */}
-      <AnimatePresence mode="wait">
-        {screen === 'home' && (
-          <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <HomePage onStart={handleStart} playerName={state.playerName} />
-          </motion.div>
+        {/* Global coin display */}
+        {showNav && (
+          <CoinDisplay
+            coins={state.coins}
+            level={state.level}
+            streak={state.streak}
+            avatar={state.avatar}
+            userEmail={user?.email ?? null}
+            onSignOut={handleSignOut}
+          />
         )}
 
-        {screen === 'map' && (
-          <motion.div key="map" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }}>
-            <GameMap
-              state={state}
-              onSelectRoom={(roomId) => { setSelectedRoom(roomId); setScreen('room'); }}
-              onShop={() => setScreen('shop')}
-              onDaily={() => setScreen('daily')}
-              onProfile={() => setScreen('profile')}
-              onLeaderboard={() => setScreen('leaderboard')}
-              onUnlockRoom={handleUnlockRoom}
-            />
-          </motion.div>
-        )}
+        {/* Toast notifications */}
+        <AnimatePresence>
+          {coinToast !== null && (
+            <CoinToast key="coin" amount={coinToast} onDone={() => setCoinToast(null)} />
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {levelUpToast !== null && (
+            <LevelUpToast key="level" level={levelUpToast} onDone={() => setLevelUpToast(null)} />
+          )}
+        </AnimatePresence>
 
-        {screen === 'room' && selectedRoom && (
-          <motion.div key="room" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
-            <PuzzleRoom
-              roomId={selectedRoom}
-              state={state}
-              onBack={() => setScreen('map')}
-              onSolve={handleSolvePuzzle}
-            />
-          </motion.div>
-        )}
+        {/* Screen routing */}
+        <AnimatePresence mode="wait">
+          {screen === 'home' && (
+            <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <HomePage onStart={handleStart} playerName={state.playerName} />
+            </motion.div>
+          )}
 
-        {screen === 'shop' && (
-          <motion.div key="shop" initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-            <Shop
-              state={state}
-              onBack={() => setScreen('map')}
-              onPurchase={handlePurchase}
-              onSetAvatar={setAvatar}
-            />
-          </motion.div>
-        )}
+          {screen === 'map' && (
+            <motion.div key="map" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }}>
+              <GameMap
+                state={state}
+                onSelectRoom={(roomId) => { setSelectedRoom(roomId); setScreen('room'); }}
+                onShop={() => setScreen('shop')}
+                onDaily={() => setScreen('daily')}
+                onProfile={() => setScreen('profile')}
+                onLeaderboard={() => setScreen('leaderboard')}
+                onUnlockRoom={handleUnlockRoom}
+              />
+            </motion.div>
+          )}
 
-        {screen === 'profile' && (
-          <motion.div key="profile" initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-            <ProfileScreen
-              state={state}
-              onBack={() => setScreen('map')}
-              onReset={() => { resetGame(); setScreen('home'); }}
-            />
-          </motion.div>
-        )}
+          {screen === 'room' && selectedRoom && (
+            <motion.div key="room" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
+              <PuzzleRoom
+                roomId={selectedRoom}
+                state={state}
+                onBack={() => setScreen('map')}
+                onSolve={handleSolvePuzzle}
+              />
+            </motion.div>
+          )}
 
-        {screen === 'daily' && (
-          <motion.div key="daily" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
-            <DailyChallenge
-              state={state}
-              onBack={() => setScreen('map')}
-              onComplete={handleDailyComplete}
-            />
-          </motion.div>
-        )}
+          {screen === 'shop' && (
+            <motion.div key="shop" initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+              <Shop
+                state={state}
+                onBack={() => setScreen('map')}
+                onPurchase={handlePurchase}
+                onSetAvatar={setAvatar}
+              />
+            </motion.div>
+          )}
 
-        {screen === 'leaderboard' && (
-          <motion.div key="leaderboard" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-            <Leaderboard onBack={() => setScreen('map')} myName={state.playerName} />
-          </motion.div>
-        )}
-      </AnimatePresence>
+          {screen === 'profile' && (
+            <motion.div key="profile" initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+              <ProfileScreen
+                state={state}
+                userEmail={user?.email ?? null}
+                onBack={() => setScreen('map')}
+                onReset={() => { resetGame(); setScreen('home'); }}
+                onSignOut={handleSignOut}
+              />
+            </motion.div>
+          )}
+
+          {screen === 'daily' && (
+            <motion.div key="daily" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
+              <DailyChallenge
+                state={state}
+                onBack={() => setScreen('map')}
+                onComplete={handleDailyComplete}
+              />
+            </motion.div>
+          )}
+
+          {screen === 'leaderboard' && (
+            <motion.div key="leaderboard" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+              <Leaderboard onBack={() => setScreen('map')} myName={state.playerName} />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>{/* end centered column */}
     </div>
   );

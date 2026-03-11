@@ -95,32 +95,38 @@ function calcLevel(xp: number): number {
   return Math.floor(Math.sqrt(xp / 50)) + 1;
 }
 
-export function useGameState() {
+// userId: Supabase auth user ID (UUID) when logged in, null for guests/no-auth.
+// Both auth user IDs and anonymous session IDs are stored in the session_id column.
+export function useGameState(userId: string | null = null) {
   const [state, setState] = useState<GameState>(loadState);
   const [syncing, setSyncing] = useState(false);
-  const sessionId = useRef(getSessionId());
+  const guestId = useRef(getSessionId());
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // On mount: pull latest from Supabase if available
+  // Use auth user ID if logged in; otherwise use the anonymous UUID for this browser
+  const effectiveId = userId ?? guestId.current;
+
+  // Load from Supabase whenever the effective ID changes (login/logout)
   useEffect(() => {
     if (!isSupabaseEnabled) return;
     setSyncing(true);
     supabase!
       .from('game_states')
       .select('*')
-      .eq('session_id', sessionId.current)
+      .eq('session_id', effectiveId)
       .maybeSingle()
       .then(({ data, error }) => {
         setSyncing(false);
         if (error || !data) return;
         const remote = fromDbRow(data as Record<string, unknown>);
-        // Take whichever has more progress (higher totalCoins)
+        // Take whichever has more progress
         const local = loadState();
         const winner = remote.totalCoins >= local.totalCoins ? remote : local;
         setState(winner);
         saveLocal(winner);
       });
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveId]);
 
   // Debounced Supabase upsert — fires 2s after last state change
   const scheduleSave = useCallback((nextState: GameState) => {
@@ -129,9 +135,10 @@ export function useGameState() {
     saveTimer.current = setTimeout(() => {
       supabase!
         .from('game_states')
-        .upsert(toDbRow(nextState, sessionId.current), { onConflict: 'session_id' });
+        .upsert(toDbRow(nextState, effectiveId), { onConflict: 'session_id' });
     }, 2000);
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveId]);
 
   const update = useCallback((updater: (s: GameState) => GameState) => {
     setState(prev => {
@@ -225,9 +232,10 @@ export function useGameState() {
     localStorage.removeItem(STORAGE_KEY);
     setState(DEFAULT_STATE);
     if (isSupabaseEnabled) {
-      supabase!.from('game_states').delete().eq('session_id', sessionId.current);
+      supabase!.from('game_states').delete().eq('session_id', effectiveId);
     }
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveId]);
 
   const hasDoubleCoins = state.purchasedRewards.includes('booster-double');
 
