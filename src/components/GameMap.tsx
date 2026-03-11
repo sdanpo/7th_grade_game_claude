@@ -9,10 +9,11 @@ interface Props {
   onShop: () => void;
   onDaily: () => void;
   onProfile: () => void;
+  onLeaderboard: () => void;
   onUnlockRoom: (roomId: string, cost: number) => void;
 }
 
-export function GameMap({ state, onSelectRoom, onShop, onDaily, onProfile, onUnlockRoom }: Props) {
+export function GameMap({ state, onSelectRoom, onShop, onDaily, onProfile, onLeaderboard, onUnlockRoom }: Props) {
   const getRoomProgress = (roomId: string) => {
     const room = rooms.find(r => r.id === roomId);
     if (!room) return { solved: 0, total: 0 };
@@ -173,6 +174,7 @@ export function GameMap({ state, onSelectRoom, onShop, onDaily, onProfile, onUnl
         {[
           { icon: '🗺️', label: 'מפה', active: true, onClick: () => {} },
           { icon: '🏪', label: 'חנות', active: false, onClick: onShop },
+          { icon: '🏆', label: 'דירוג', active: false, onClick: onLeaderboard },
           { icon: '👤', label: 'פרופיל', active: false, onClick: onProfile },
         ].map(item => (
           <button key={item.label} onClick={item.onClick}

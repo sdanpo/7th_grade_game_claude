@@ -9,6 +9,7 @@ import { PuzzleRoom } from './components/PuzzleRoom';
 import { Shop } from './components/Shop';
 import { ProfileScreen } from './components/ProfileScreen';
 import { DailyChallenge } from './components/DailyChallenge';
+import { Leaderboard } from './components/Leaderboard';
 import { AnimatePresence, motion } from 'framer-motion';
 
 // Floating coin reward notification
@@ -154,6 +155,7 @@ function App() {
               onShop={() => setScreen('shop')}
               onDaily={() => setScreen('daily')}
               onProfile={() => setScreen('profile')}
+              onLeaderboard={() => setScreen('leaderboard')}
               onUnlockRoom={handleUnlockRoom}
             />
           </motion.div>
@@ -198,6 +200,12 @@ function App() {
               onBack={() => setScreen('map')}
               onComplete={handleDailyComplete}
             />
+          </motion.div>
+        )}
+
+        {screen === 'leaderboard' && (
+          <motion.div key="leaderboard" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            <Leaderboard onBack={() => setScreen('map')} myName={state.playerName} />
           </motion.div>
         )}
       </AnimatePresence>
