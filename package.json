@@ -5,9 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:local": "vite --mode localdb",
+    "dev:remote": "vite --mode remote",
     "build": "tsc -b && vite build",
+    "build:preview": "tsc -b && vite build --mode remote",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "supabase:start": "npx supabase start",
+    "supabase:stop": "npx supabase stop",
+    "supabase:reset": "npx supabase db reset"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.99.0",

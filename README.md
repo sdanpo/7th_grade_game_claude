@@ -4,66 +4,115 @@
 
 ---
 
-## הרצה מקומית (ללא Supabase)
+## סביבות הרצה
+
+| פקודה | Supabase | מתי להשתמש |
+|-------|----------|------------|
+| `npm run dev` | ❌ localStorage בלבד | בדיקה מהירה ללא DB |
+| `npm run dev:local` | ✅ Supabase מקומי (פורט 54321) | פיתוח מלא מול DB מקומי |
+| `npm run dev:remote` | ✅ Supabase בענן | בדיקה מול production DB |
+
+---
+
+## 🖥️ אפשרות א׳ — ללא Supabase (הכי מהיר)
 
 ```bash
 npm install
 npm run dev
 ```
-
-פתח בדפדפן: **http://localhost:5173**
-> ⚡ ללא Supabase המשחק שומר התקדמות ב-localStorage בלבד. הכל עובד.
+→ פתח **http://localhost:5173** · התקדמות נשמרת ב-localStorage בלבד.
 
 ---
 
-## 🚀 פריסה ל-Vercel + Supabase
+## 🐳 אפשרות ב׳ — Supabase מקומי (Docker)
 
-### שלב 1 — צור פרויקט Supabase
+מריץ Supabase שלם על המחשב שלך — אין צורך בחשבון.
 
-1. היכנס ל-[app.supabase.com](https://app.supabase.com) וצור פרויקט חדש
-2. עבור ל-**SQL Editor** והרץ את המיגרציה:
-   ```sql
-   -- העתק והדבק את התוכן של:
-   supabase/migrations/001_init.sql
-   ```
-3. עבור ל-**Project Settings → API** ושמור:
-   - `Project URL`  → `VITE_SUPABASE_URL`
-   - `anon public key` → `VITE_SUPABASE_ANON_KEY`
-
-### שלב 2 — פרוס ל-Vercel
+**דרישות:** [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 
 ```bash
-# אם אין לך Vercel CLI:
-npm i -g vercel
+# 1. התקן Supabase CLI
+npm install -g supabase
 
-vercel
-# → ענה על השאלות, Vercel מזהה Vite אוטומטית
+# 2. הפעל Docker Desktop, ואז:
+npm run supabase:start
+# → מדפיס את כתובת ה-Studio המקומי (http://localhost:54323)
+
+# 3. הרץ את המיגרציה
+npm run supabase:reset
+# (מריץ אוטומטית את supabase/migrations/001_init.sql)
+
+# 4. הרץ את האפליקציה מול ה-DB המקומי
+npm run dev:local
 ```
 
-**או** חבר את ה-GitHub repo ישירות ב-[vercel.com](https://vercel.com) (Import Project).
+→ פתח **http://localhost:5173**
+→ Studio (ממשק DB) ב-**http://localhost:54323**
 
-### שלב 3 — הוסף משתני סביבה ב-Vercel
+> ⚡ `.env.localdb` כבר מכיל את הקרדנציאלים הדיפולטיביים של Supabase מקומי — אין צורך לערוך כלום.
 
-ב-Vercel Dashboard → Project → **Settings → Environment Variables**:
+עצירה:
+```bash
+npm run supabase:stop
+```
+
+---
+
+## 🚀 אפשרות ג׳ — Supabase בענן + Vercel (production)
+
+### שלב 1 — צור פרויקט Supabase בענן
+
+1. [app.supabase.com](https://app.supabase.com) → New Project
+2. **SQL Editor** → הרץ את תוכן `supabase/migrations/001_init.sql`
+3. **Project Settings → API** → שמור:
+   - `Project URL` → `VITE_SUPABASE_URL`
+   - `anon public key` → `VITE_SUPABASE_ANON_KEY`
+
+### שלב 2 — הרצה מקומית מול ה-DB בענן
+
+```bash
+# ערוך .env.remote עם הערכים מסעיף 3 למעלה
+nano .env.remote
+
+# הרץ
+npm run dev:remote
+```
+
+→ פתח **http://localhost:5173** · הנתונים עולים ל-Supabase בענן בזמן אמת.
+
+### שלב 3 — פריסה ל-Vercel
+
+```bash
+npm i -g vercel
+vercel
+```
+
+**או** חבר GitHub repo ב-[vercel.com/new](https://vercel.com/new).
+
+### שלב 4 — משתני סביבה ב-Vercel
+
+Vercel Dashboard → Project → **Settings → Environment Variables**:
 
 | Name | Value |
 |------|-------|
 | `VITE_SUPABASE_URL` | `https://xxxx.supabase.co` |
 | `VITE_SUPABASE_ANON_KEY` | `eyJ...` |
 
-לחץ **Redeploy** לאחר הוספה.
-
-### שלב 4 — הרצה מקומית עם Supabase
-
-```bash
-cp .env.example .env
-# ערוך את .env עם הערכים שלך
-npm run dev
-```
+לחץ **Redeploy**.
 
 ---
 
-## 🗄️ סכמת Supabase
+## 📁 קבצי סביבה
+
+| קובץ | מה הוא עושה | מחויב ל-git? |
+|------|-------------|--------------|
+| `.env.localdb` | קרדנציאלים לSupabase מקומי (ברירת מחדל קבועה) | ✅ כן |
+| `.env.remote` | קרדנציאלים לSupabase בענן | ❌ לא |
+| `.env.example` | תבנית ריקה | ✅ כן |
+
+---
+
+## 🗄️ סכמת DB
 
 | טבלה | תיאור |
 |------|--------|
