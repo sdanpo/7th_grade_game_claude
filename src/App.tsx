@@ -79,6 +79,7 @@ function App() {
   const userId = user?.id ?? null;
 
   const [screen, setScreen] = useState<Screen>('home');
+  const [guestMode, setGuestMode] = useState(false); // true = user explicitly chose to skip auth
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
   const [coinToast, setCoinToast] = useState<number | null>(null);
   const [levelUpToast, setLevelUpToast] = useState<number | null>(null);
@@ -143,33 +144,22 @@ function App() {
   const handleSignOut = useCallback(async () => {
     await signOut();
     resetGame();
+    setGuestMode(false);
     setScreen('home');
   }, [signOut, resetGame]);
 
-  // Show spinner while auth is initializing
+  // Show spinner while auth session is being checked (only relevant when Supabase is on)
   if (authLoading) return <LoadingScreen />;
 
-  // If Supabase is enabled and user is NOT logged in → show auth screen
-  if (isSupabaseEnabled && !user && screen !== 'home') {
-    // Guest mode via 'home' screen is allowed — only push to auth if trying to access game screens
-  }
-
-  const showAuthScreen = isSupabaseEnabled && !user && screen !== 'home';
-  if (showAuthScreen) {
+  // Show auth screen only when:
+  //  - Supabase is configured (isSupabaseEnabled)
+  //  - user is not logged in
+  //  - user has NOT explicitly chosen guest mode
+  if (isSupabaseEnabled && !user && !guestMode) {
     return (
       <AuthScreen
-        onAuth={() => setScreen('home')}
-        onGuest={() => {}} // already on 'home'... handled below
-      />
-    );
-  }
-
-  // When Supabase is on and no user, show auth before home
-  if (isSupabaseEnabled && !user) {
-    return (
-      <AuthScreen
-        onAuth={() => setScreen('home')}
-        onGuest={() => setScreen('home')}
+        onAuth={() => {}}  // useAuth listener picks up the new session automatically
+        onGuest={() => setGuestMode(true)}
       />
     );
   }
